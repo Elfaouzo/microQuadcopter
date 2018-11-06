@@ -8,7 +8,7 @@
 #include "LSM6.h"
 
 /*
-Revision 131
+Revision 132 - branch for uint8 throttle & mc
 Motor control:  OK.
 Wifi link:      OK. 
 Timing schedul: OK.
@@ -47,7 +47,6 @@ ASIS:
 				
 TODO:
 			mcx shall not be a float! but a uint8 instead. Same for the throttle.
-			Add stop command to send log file on RC transmitter.
 			There shall be no assignment of the variant state outside the main loop. 8 cases.
 			Improve the display at startup, consider one single display with all info.
 			Yaw calculation: The yaw gyro integration was moved from 50ms to 5ms loop, kalman_fo() and update_MAG() have been updated. NO! Revert, result was tested NOK.
@@ -58,6 +57,7 @@ RELEASE CONTENT:
 			Variant TAKEOFF_THR_LO added for RC receiver. Set the minimum throttle threshold to trigger a take-off.
 			Variant PPM_ATTITUDE_MAX added for RC receiver. Rescale the target attitude request by the RC transmitter by setting the maximum value.
 			Variant dataLoggingControlAnalysis has been modified to log only pitch/roll, errorPitch/errorRoll, motors. No yaw, no altitude but logging is longer.
+			Datatype of mc1, mc2, mc3, mc4 and throttle has been changed to uint8_t.
 			
 TO BE TESTED:   
 			Attitude control with received only: At fixed altitude, trigger an impulse in roll/pitch for system id.
@@ -69,7 +69,7 @@ TO BE TESTED:
 				    - Logs show no issues with the set points.
 				    - Behaviour seems to be dramatic and the quad difficult to control: controls are too sensitive! reduce effect of the controller by dividing by 5 or 10. OK.
 					- Test again.
-				- DataLogging shall be at least 10s. Impossible but 6s instead.
+				- DataLogging shall be at least 10s. Impossible but 7s instead.
 				- Flash and update .m script for dataLogging.
 				- Trigger impulses in roll and pitch and log.
 				
@@ -370,9 +370,9 @@ float error2_alt, corr2I_alt, corr2_alt, error2Prev_alt;
 #endif
 
 float biasRollRate, biasPitchRate, biasYawRate;
-float mc1, mc2, mc3, mc4, throttle, staticThrottle;
+uint8_t mc1, mc2, mc3, mc4, throttle, staticThrottle;
 
-float takeOffThrottle, flightThrottle;
+uint8_t takeOffThrottle, flightThrottle;
 
 float totalGyroYawRate, totalGyroRollRate, totalGyroPitchRate, totalAccPitch, totalAccRoll;
 
@@ -398,8 +398,8 @@ const float OCV_S[] = {0.00, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.9
 const int OCV_size = 11;
 float OCV_offset = 0.13*0;	//Photon drains 80mA in average
 
-const float OCV_ThrTo[]={235., 235., 225., 225., 220., 210., 200., 200., 190., 190., 180.};			//Static throttle at take-off
-const float OCV_ThrFl[]={225., 225., 210., 200., 170., 160., 150., 140., 140., 130., 120.};			//Static throttle during flight
+const float OCV_ThrTo[]={235, 235, 225, 225, 220, 210, 200, 200, 190, 190, 180};			//Static throttle at take-off
+const float OCV_ThrFl[]={225, 225, 210, 200, 170, 160, 150, 140, 140, 130, 120};			//Static throttle during flight
 
 const float OCV_TOTiOut[]={1000., 1000., 1000., 800., 800., 800., 800., 800., 800., 800., 800.};			//Take-off timeout in ms
 #endif
@@ -474,7 +474,7 @@ struct dataLog{
   uint16_t stampTime[dataLoggingBufferSize];  
   float pitchLog[dataLoggingBufferSize];
   float rollLog[dataLoggingBufferSize];
-  float throttleLog[dataLoggingBufferSize];
+  uint8_t throttleLog[dataLoggingBufferSize];
   uint16_t idx;
 };
 #endif
@@ -485,7 +485,7 @@ struct dataLog{
   float rollLog[dataLoggingBufferSize];
   float filtPitchAccLog[dataLoggingBufferSize];
   float filtRollAccLog[dataLoggingBufferSize];
-  float throttleLog[dataLoggingBufferSize];
+  uint8_t throttleLog[dataLoggingBufferSize];
   float filtRollGyroRateLog[dataLoggingBufferSize];
   float filtPitchGyroRateLog[dataLoggingBufferSize];
   uint16_t idx;
@@ -496,11 +496,11 @@ struct dataLog{
   uint16_t stampTime[dataLoggingBufferSize];  
   float pitchLog[dataLoggingBufferSize];
   float rollLog[dataLoggingBufferSize];
-  float throttleLog[dataLoggingBufferSize];
-  float mc1Log[dataLoggingBufferSize];
-  float mc2Log[dataLoggingBufferSize];
-  float mc3Log[dataLoggingBufferSize];
-  float mc4Log[dataLoggingBufferSize];
+  uint8_t throttleLog[dataLoggingBufferSize];
+  uint8_t mc1Log[dataLoggingBufferSize];
+  uint8_t mc2Log[dataLoggingBufferSize];
+  uint8_t mc3Log[dataLoggingBufferSize];
+  uint8_t mc4Log[dataLoggingBufferSize];
   float error_rollLog[dataLoggingBufferSize];
   float error_pitchLog[dataLoggingBufferSize];
   float corr_rollLog[dataLoggingBufferSize];
@@ -517,11 +517,11 @@ struct dataLog{
   uint16_t stampTime[dataLoggingBufferSize];  
   float pitchLog[dataLoggingBufferSize];
   float rollLog[dataLoggingBufferSize];
-  float throttleLog[dataLoggingBufferSize];
-  float mc1Log[dataLoggingBufferSize];
-  float mc2Log[dataLoggingBufferSize];
-  float mc3Log[dataLoggingBufferSize];
-  float mc4Log[dataLoggingBufferSize];
+  uint8_t throttleLog[dataLoggingBufferSize];
+  uint8_t mc1Log[dataLoggingBufferSize];
+  uint8_t mc2Log[dataLoggingBufferSize];
+  uint8_t mc3Log[dataLoggingBufferSize];
+  uint8_t mc4Log[dataLoggingBufferSize];
   float error_rollLog[dataLoggingBufferSize];
   float error_pitchLog[dataLoggingBufferSize];
   uint16_t idx;
@@ -533,11 +533,11 @@ struct dataLog{
   float pitchLog[dataLoggingBufferSize];
   float rollLog[dataLoggingBufferSize];
   float yawLog[dataLoggingBufferSize];
-  float throttleLog[dataLoggingBufferSize];
-  float mc1Log[dataLoggingBufferSize];
-  float mc2Log[dataLoggingBufferSize];
-  float mc3Log[dataLoggingBufferSize];
-  float mc4Log[dataLoggingBufferSize];
+  uint8_t throttleLog[dataLoggingBufferSize];
+  uint8_t mc1Log[dataLoggingBufferSize];
+  uint8_t mc2Log[dataLoggingBufferSize];
+  uint8_t mc3Log[dataLoggingBufferSize];
+  uint8_t mc4Log[dataLoggingBufferSize];
   float altitudeLog[dataLoggingBufferSize];
   float desired_rollLog[dataLoggingBufferSize];
   float desired_pitchLog[dataLoggingBufferSize];
@@ -553,7 +553,7 @@ struct dataLog{
   float filtYawGyroLog[dataLoggingBufferSize];
   float filtYawRateGyroLog[dataLoggingBufferSize];
   float filtYawCompassLog[dataLoggingBufferSize];
-  float throttleLog[dataLoggingBufferSize];
+  uint8_t throttleLog[dataLoggingBufferSize];
   float compassErrorLog[dataLoggingBufferSize];
   uint16_t idx;
 };
@@ -575,13 +575,13 @@ struct dataLog{
   float filtYLog[dataLoggingBufferSize];
   #endif
   float filtHzLog[dataLoggingBufferSize];
-  float mc1Log[dataLoggingBufferSize];
-  float mc2Log[dataLoggingBufferSize];
-  float mc3Log[dataLoggingBufferSize];
-  float mc4Log[dataLoggingBufferSize];
+  uint8_t mc1Log[dataLoggingBufferSize];
+  uint8_t mc2Log[dataLoggingBufferSize];
+  uint8_t mc3Log[dataLoggingBufferSize];
+  uint8_t mc4Log[dataLoggingBufferSize];
   float filtZLog[dataLoggingBufferSize];
   float HzBarLog[dataLoggingBufferSize];
-  float staticThrottleLog[dataLoggingBufferSize];
+  uint8_t staticThrottleLog[dataLoggingBufferSize];
   float corr_alt_totalLog[dataLoggingBufferSize];
   uint16_t idx;
 };
@@ -1983,9 +1983,9 @@ void wifi_init(String eSSID, String PASS, int tcp_port)
 }
 
  ///////////////////// MOTOR CONTROL SECTION //////////////////////
-void testMotorsPower(int thrust)
+void testMotorsPower(uint8_t thrust)
 {
-  int tmp = throttleSaturation(thrust);
+  uint8_t tmp = throttleSaturation(thrust);
   analogWrite(MOTOR_1_PIN, tmp);
   analogWrite(MOTOR_2_PIN, tmp);
   analogWrite(MOTOR_3_PIN, tmp);
@@ -2013,7 +2013,7 @@ void testMotor(int motor)
 }
 
 
-int throttleSaturation(int thrust_unSat)
+int throttleSaturation(uint8_t thrust_unSat)
 {
   if(thrust_unSat > 255)
   {
@@ -2285,7 +2285,7 @@ void transmit_DataLogChunk()
 	    tmp = "\n" + String(buffer.stampTime[i]) + ",";
 	    tmp += String(buffer.rollLog[i], 2) + ",";
 		tmp += String(buffer.pitchLog[i], 2) + ",";
-		tmp += String(buffer.throttleLog[i], 2);
+		tmp += String(buffer.throttleLog[i]);
 		send_tcp(tmp);
 		client.flush();
 	}
@@ -2301,11 +2301,11 @@ void transmit_DataLogChunk()
 		tmp += String(buffer.pitchLog[i], 2) + ",";
 		tmp += String(buffer.yawLog[i], 2) + ",";
 		send_tcp(tmp);
-		tmp = String(buffer.throttleLog[i], 2) + ",";
-		tmp += String(buffer.mc1Log[i], 2) + ",";
-		tmp += String(buffer.mc2Log[i], 2) + ",";
-		tmp += String(buffer.mc3Log[i], 2) + ",";
-		tmp += String(buffer.mc4Log[i], 2) + ",";
+		tmp = String(buffer.throttleLog[i]) + ",";
+		tmp += String(buffer.mc1Log[i]) + ",";
+		tmp += String(buffer.mc2Log[i]) + ",";
+		tmp += String(buffer.mc3Log[i]) + ",";
+		tmp += String(buffer.mc4Log[i]) + ",";
 		send_tcp(tmp);
 		tmp = String(buffer.altitudeLog[i], 2) + ",";
 		tmp += String(buffer.desired_rollLog[i], 2) + ",";
@@ -2329,7 +2329,7 @@ void transmit_DataLogChunk()
 		tmp += String(buffer.filtPitchAccLog[i], 2) + ",";
 		tmp += String(buffer.filtRollGyroRateLog[i], 2) + ",";
 		tmp += String(buffer.filtPitchGyroRateLog[i], 2) + ",";
-		tmp += String(buffer.throttleLog[i], 2); 
+		tmp += String(buffer.throttleLog[i]); 
 		send_tcp(tmp);
 		client.flush();
 	}
@@ -2344,11 +2344,11 @@ void transmit_DataLogChunk()
 	    tmp = "\n" + String(buffer.stampTime[i]) + ",";
 	    tmp += String(buffer.rollLog[i], 2) + ",";
 		tmp += String(buffer.pitchLog[i], 2) + ",";
-		tmp += String(buffer.throttleLog[i], 2) + ","; 
-		tmp += String(buffer.mc1Log[i], 2) + ","; 
-		tmp += String(buffer.mc2Log[i], 2) + ","; 
-		tmp += String(buffer.mc3Log[i], 2) + ",";
-		tmp += String(buffer.mc4Log[i], 2) + ",";
+		tmp += String(buffer.throttleLog[i]) + ","; 
+		tmp += String(buffer.mc1Log[i]) + ","; 
+		tmp += String(buffer.mc2Log[i]) + ","; 
+		tmp += String(buffer.mc3Log[i]) + ",";
+		tmp += String(buffer.mc4Log[i]) + ",";
 		send_tcp(tmp);
 		tmp = String(buffer.error_rollLog[i], 2) + ","; 
 		tmp += String(buffer.error_pitchLog[i], 2) + ","; 
@@ -2371,12 +2371,12 @@ void transmit_DataLogChunk()
 	    tmp = "\n" + String(buffer.stampTime[i]) + ",";
 	    tmp += String(buffer.rollLog[i], 2) + ",";
 		tmp += String(buffer.pitchLog[i], 2) + ",";
-		tmp += String(buffer.throttleLog[i], 2) + ","; 
-		tmp += String(buffer.mc1Log[i], 2) + ","; 
-		tmp += String(buffer.mc2Log[i], 2) + ","; 
+		tmp += String(buffer.throttleLog[i]) + ","; 
+		tmp += String(buffer.mc1Log[i]) + ","; 
+		tmp += String(buffer.mc2Log[i]) + ","; 
 		send_tcp(tmp);
-		tmp = String(buffer.mc3Log[i], 2) + ",";
-		tmp += String(buffer.mc4Log[i], 2) + ",";
+		tmp = String(buffer.mc3Log[i]) + ",";
+		tmp += String(buffer.mc4Log[i]) + ",";
 		tmp += String(buffer.error_rollLog[i], 2) + ","; 
 		tmp += String(buffer.error_pitchLog[i], 2); 
 		send_tcp(tmp);
@@ -2391,7 +2391,7 @@ void transmit_DataLogChunk()
 	{
 	    tmp = "\n" + String(buffer.stampTime[i]) + ",";
 		tmp += String(buffer.yawLog[i], 2) + ",";
-		tmp += String(buffer.throttleLog[i], 2)  + ",";
+		tmp += String(buffer.throttleLog[i])  + ",";
 		tmp += String(buffer.filtYawGyroLog[i], 2) + ",";
 		tmp += String(buffer.filtYawRateGyroLog[i], 2) + ",";
 		tmp += String(buffer.filtYawCompassLog[i], 2) + ",";
@@ -2429,22 +2429,22 @@ void transmit_DataLogChunk()
 		tmp += String(buffer.filtYLog[i], 2) + ",";
 		tmp += String(buffer.filtZLog[i], 2) + ",";
 		tmp += String(buffer.HzBarLog[i], 2) + ",";
-		tmp += String(buffer.staticThrottleLog[i], 2) + ",";
-		tmp += String(buffer.corr_alt_totalLog[i], 2);
+		tmp += String(buffer.staticThrottleLog[i]) + ",";
+		tmp += String(buffer.corr_alt_totalLog[i]);
 		send_tcp(tmp);
 		#else
 		tmp = "\n" + String(buffer.stampTime[i]) + ",";
 		tmp += String(buffer.rollLog[i], 2)  + ",";
 		tmp += String(buffer.pitchLog[i], 2) + ",";
 		tmp += String(buffer.filtHzLog[i], 2) + ",";
-		tmp += String(buffer.mc1Log[i], 2) + ",";
+		tmp += String(buffer.mc1Log[i]) + ",";
 		send_tcp(tmp);
-		tmp = String(buffer.mc2Log[i], 2) + ",";
-		tmp += String(buffer.mc3Log[i], 2) + ",";
-		tmp += String(buffer.mc4Log[i], 2) + ",";
+		tmp = String(buffer.mc2Log[i]) + ",";
+		tmp += String(buffer.mc3Log[i]) + ",";
+		tmp += String(buffer.mc4Log[i]) + ",";
 		tmp += String(buffer.HzBarLog[i], 2) + ",";
-		tmp += String(buffer.staticThrottleLog[i], 2) + ",";
-		tmp += String(buffer.corr_alt_totalLog[i], 2);
+		tmp += String(buffer.staticThrottleLog[i]) + ",";
+		tmp += String(buffer.corr_alt_totalLog[i]);
 		send_tcp(tmp);
 		#endif
 		tmp = "";
