@@ -8,7 +8,7 @@
 #include "LSM6.h"
 
 /*
-Revision 132 - branch for uint8 throttle & mc
+Revision 132 - branch for uint8 throttle & mc's
 Motor control:  OK.
 Wifi link:      OK. 
 Timing schedul: OK.
