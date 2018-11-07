@@ -8,7 +8,7 @@
 #include "LSM6.h"
 
 /*
-Revision 131
+Revision 134
 Motor control:  OK.
 Wifi link:      OK. 
 Timing schedul: OK.
