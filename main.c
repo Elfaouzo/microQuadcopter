@@ -8,7 +8,7 @@
 #include "LSM6.h"
 
 /*
-Revision 132 - branch for uint8 throttle & mc's
+Revision 134 - branch for uint8 throttle & mc, second trial
 Motor control:  OK.
 Wifi link:      OK. 
 Timing schedul: OK.
@@ -1559,10 +1559,10 @@ void update_correction_parameters()
 
 void update_motors_control()
 {
-  analogWrite(MOTOR_1_PIN, mc1);
-  analogWrite(MOTOR_2_PIN, mc2);
-  analogWrite(MOTOR_3_PIN, mc3);
-  analogWrite(MOTOR_4_PIN, mc4);
+  analogWrite(MOTOR_1_PIN, (int)mc1);
+  analogWrite(MOTOR_2_PIN, (int)mc2);
+  analogWrite(MOTOR_3_PIN, (int)mc3);
+  analogWrite(MOTOR_4_PIN, (int)mc4);
 }
 
 void update_control_mixing()
@@ -1575,27 +1575,27 @@ void update_control_mixing()
 		#endif
 		
         #ifdef INVERT_CMD
-        mc1 = -corr2_pitch -corr_yaw + corr_alt_total;
-        mc4 = corr2_pitch -corr_yaw + corr_alt_total;
-        mc2 = corr2_roll + corr_yaw + corr_alt_total;
-        mc3 = -corr2_roll + corr_yaw + corr_alt_total;
+        mc1 = (uint8_t)(-corr2_pitch -corr_yaw + corr_alt_total);
+        mc4 = (uint8_t)(corr2_pitch -corr_yaw + corr_alt_total);
+        mc2 = (uint8_t)(corr2_roll + corr_yaw + corr_alt_total);
+        mc3 = (uint8_t)(-corr2_roll + corr_yaw + corr_alt_total);
         #else
-        mc1 = corr2_pitch -corr_yaw + corr_alt_total;
-        mc4 = -corr2_pitch -corr_yaw + corr_alt_total;
-        mc2 = corr2_roll + corr_yaw + corr_alt_total;
-        mc3 = -corr2_roll + corr_yaw + corr_alt_total;
+        mc1 = (uint8_t)(corr2_pitch -corr_yaw + corr_alt_total);
+        mc4 = (uint8_t)(-corr2_pitch -corr_yaw + corr_alt_total);
+        mc2 = (uint8_t)(corr2_roll + corr_yaw + corr_alt_total);
+        mc3 = (uint8_t)(-corr2_roll + corr_yaw + corr_alt_total);
         #endif
     #else
         #ifdef INVERT_CMD
-        mc1 = -corr_pitch -corr_yaw + corr_alt_total;
-        mc4 = corr_pitch -corr_yaw + corr_alt_total;
-        mc2 = corr_roll + corr_yaw + corr_alt_total;
-        mc3 = -corr_roll + corr_yaw + corr_alt_total;
+        mc1 = (uint8_t)(-corr_pitch -corr_yaw + corr_alt_total);
+        mc4 = (uint8_t)(corr_pitch -corr_yaw + corr_alt_total);
+        mc2 = (uint8_t)(corr_roll + corr_yaw + corr_alt_total);
+        mc3 = (uint8_t)(-corr_roll + corr_yaw + corr_alt_total);
         #else
-        mc1 = corr_pitch -corr_yaw + corr_alt_total;
-        mc4 = -corr_pitch -corr_yaw + corr_alt_total;
-        mc2 = corr_roll + corr_yaw + corr_alt_total;
-        mc3 = -corr_roll + corr_yaw + corr_alt_total;
+        mc1 = (uint8_t)(corr_pitch -corr_yaw + corr_alt_total);
+        mc4 = (uint8_t)(-corr_pitch -corr_yaw + corr_alt_total);
+        mc2 = (uint8_t)(corr_roll + corr_yaw + corr_alt_total);
+        mc3 = (uint8_t)(-corr_roll + corr_yaw + corr_alt_total);
         #endif
 
     #endif
@@ -1986,10 +1986,10 @@ void wifi_init(String eSSID, String PASS, int tcp_port)
 void testMotorsPower(uint8_t thrust)
 {
   uint8_t tmp = throttleSaturation(thrust);
-  analogWrite(MOTOR_1_PIN, tmp);
-  analogWrite(MOTOR_2_PIN, tmp);
-  analogWrite(MOTOR_3_PIN, tmp);
-  analogWrite(MOTOR_4_PIN, tmp);
+  analogWrite(MOTOR_1_PIN, (int)tmp);
+  analogWrite(MOTOR_2_PIN, (int)tmp);
+  analogWrite(MOTOR_3_PIN, (int)tmp);
+  analogWrite(MOTOR_4_PIN, (int)tmp);
 }
 
 void testMotor(int motor)
@@ -2013,7 +2013,7 @@ void testMotor(int motor)
 }
 
 
-int throttleSaturation(uint8_t thrust_unSat)
+uint8_t throttleSaturation(uint8_t thrust_unSat)
 {
   if(thrust_unSat > 255)
   {
