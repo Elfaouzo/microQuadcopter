@@ -125,7 +125,7 @@ TO BE TESTED:
 #define HEART_BEAT
 
 #define CONTROL
-//#define DIAGNOSTICS                                                            
+#define DIAGNOSTICS                                                            
 #define WIFI_LISTEN
 #define IMU_ENABLE
 #define HEART_BEAT_THR 50
@@ -370,10 +370,10 @@ float error2_alt, corr2I_alt, corr2_alt, error2Prev_alt;
 #endif
 
 float biasRollRate, biasPitchRate, biasYawRate;
-uint8_t mc1, mc2, mc3, mc4, throttle, staticThrottle;
-
-uint8_t takeOffThrottle, flightThrottle;
-
+int16_t mc1, mc2, mc3, mc4, throttle, staticThrottle;
+int16_t takeOffThrottle, flightThrottle;
+uint16_t throttle1;
+uint8_t throttle2;
 float totalGyroYawRate, totalGyroRollRate, totalGyroPitchRate, totalAccPitch, totalAccRoll;
 
 float kxGyro = KalmanGainGyro;
@@ -845,6 +845,9 @@ void loop() {
             }*/
             //publish_altimeter();
 			//publish_battStatus();
+			throttle1=(uint16_t)(throttle);
+			throttle2=(uint8_t)(throttle1);
+			Particle.publish(String(throttle) + " - " + String(throttle1) + " - " + String(throttle2));
             currentTimeDebug = System.ticks();
         }
     #endif
@@ -1559,10 +1562,10 @@ void update_correction_parameters()
 
 void update_motors_control()
 {
-  analogWrite(MOTOR_1_PIN, (int)mc1);
-  analogWrite(MOTOR_2_PIN, (int)mc2);
-  analogWrite(MOTOR_3_PIN, (int)mc3);
-  analogWrite(MOTOR_4_PIN, (int)mc4);
+  analogWrite(MOTOR_1_PIN, mc1);
+  analogWrite(MOTOR_2_PIN, mc2);
+  analogWrite(MOTOR_3_PIN, mc3);
+  analogWrite(MOTOR_4_PIN, mc4);
 }
 
 void update_control_mixing()
@@ -1575,27 +1578,27 @@ void update_control_mixing()
 		#endif
 		
         #ifdef INVERT_CMD
-        mc1 = (uint8_t)(-corr2_pitch -corr_yaw + corr_alt_total);
-        mc4 = (uint8_t)(corr2_pitch -corr_yaw + corr_alt_total);
-        mc2 = (uint8_t)(corr2_roll + corr_yaw + corr_alt_total);
-        mc3 = (uint8_t)(-corr2_roll + corr_yaw + corr_alt_total);
+        mc1 = (int16_t)(-corr2_pitch -corr_yaw + corr_alt_total);
+        mc4 = (int16_t)(corr2_pitch -corr_yaw + corr_alt_total);
+        mc2 = (int16_t)(corr2_roll + corr_yaw + corr_alt_total);
+        mc3 = (int16_t)(-corr2_roll + corr_yaw + corr_alt_total);
         #else
-        mc1 = (uint8_t)(corr2_pitch -corr_yaw + corr_alt_total);
-        mc4 = (uint8_t)(-corr2_pitch -corr_yaw + corr_alt_total);
-        mc2 = (uint8_t)(corr2_roll + corr_yaw + corr_alt_total);
-        mc3 = (uint8_t)(-corr2_roll + corr_yaw + corr_alt_total);
+        mc1 = (int16_t)(corr2_pitch -corr_yaw + corr_alt_total);
+        mc4 = (int16_t)(-corr2_pitch -corr_yaw + corr_alt_total);
+        mc2 = (int16_t)(corr2_roll + corr_yaw + corr_alt_total);
+        mc3 = (int16_t)(-corr2_roll + corr_yaw + corr_alt_total);
         #endif
     #else
         #ifdef INVERT_CMD
-        mc1 = (uint8_t)(-corr_pitch -corr_yaw + corr_alt_total);
-        mc4 = (uint8_t)(corr_pitch -corr_yaw + corr_alt_total);
-        mc2 = (uint8_t)(corr_roll + corr_yaw + corr_alt_total);
-        mc3 = (uint8_t)(-corr_roll + corr_yaw + corr_alt_total);
+        mc1 = (int16_t)(-corr_pitch -corr_yaw + corr_alt_total);
+        mc4 = (int16_t)(corr_pitch -corr_yaw + corr_alt_total);
+        mc2 = (int16_t)(corr_roll + corr_yaw + corr_alt_total);
+        mc3 = (int16_t)(-corr_roll + corr_yaw + corr_alt_total);
         #else
-        mc1 = (uint8_t)(corr_pitch -corr_yaw + corr_alt_total);
-        mc4 = (uint8_t)(-corr_pitch -corr_yaw + corr_alt_total);
-        mc2 = (uint8_t)(corr_roll + corr_yaw + corr_alt_total);
-        mc3 = (uint8_t)(-corr_roll + corr_yaw + corr_alt_total);
+        mc1 = (int16_t)(corr_pitch -corr_yaw + corr_alt_total);
+        mc4 = (int16_t)(-corr_pitch -corr_yaw + corr_alt_total);
+        mc2 = (int16_t)(corr_roll + corr_yaw + corr_alt_total);
+        mc3 = (int16_t)(-corr_roll + corr_yaw + corr_alt_total);
         #endif
 
     #endif
@@ -1800,7 +1803,8 @@ void PPM_Interprete()
 	desired_roll = 180*(PPM_CHN_DATA[0] - (PPM_HI+PPM_LO)/2)/(PPM_HI - PPM_LO); //Shall be between [-0.5;0.5] or [-90;90]
 	desired_pitch = 180*(PPM_CHN_DATA[1] - (PPM_HI+PPM_LO)/2)/(PPM_HI - PPM_LO);
 	
-	throttle = 255*(PPM_CHN_DATA[2] - PPM_LO)/(PPM_HI - PPM_LO);
+	throttle = (int16_t)(255*(PPM_CHN_DATA[2] - PPM_LO)/(PPM_HI - PPM_LO));
+	if(throttle < 0){throttle=0;}
 	if(throttle>=250 && PPM_init_ok==0)
 	{
 		PPM_init_ok=1;
