@@ -8,7 +8,7 @@
 #include "LSM6.h"
 
 /*
-Revision 134
+Revision 134 - RC branch
 Motor control:  OK.
 Wifi link:      OK. 
 Timing schedul: OK.
@@ -442,6 +442,8 @@ long currentTimePPM;
 long currentTimePPM_temp;
 uint8_t PPM_state = 0;
 long PPM_CHN_DATA[10];
+long PPM_CHN_DATA_4_PREV;
+long PPM_CHN_DATA_5_PREV;
 #endif
 
 #ifdef BATT_SOC
@@ -685,6 +687,7 @@ void setup() {
   pinMode(PPM_PIN, INPUT_PULLUP);
   attachInterrupt(PPM_PIN, PPM_Read, RISING);
   currentTimePPM = micros();
+  
   #endif
   if(state == 3 || state == 4)
   {
@@ -984,6 +987,7 @@ void standby()
   LedStateOFF();
   if(state != 0)
   {
+	state = 0;
     #ifndef AUTOMATIC_MODE
         Particle.connect();
     #endif
@@ -1835,6 +1839,28 @@ void PPM_Interprete()
 			currentTimeTO=System.ticks();
 		}
 		#endif
+				
+	}
+	
+	if(PPM_init_ok != 2)
+	{
+		PPM_CHN_DATA_4_PREV=PPM_CHN_DATA[4];
+		PPM_CHN_DATA_5_PREV=PPM_CHN_DATA[5];
+	}
+	else
+	{
+		if(PPM_CHN_DATA[4]!=PPM_CHN_DATA_4_PREV)
+		{
+			if(state!=0)
+			{
+				standby();
+			}
+		}
+
+		if(PPM_CHN_DATA[5]!=PPM_CHN_DATA_5_PREV)
+		{
+			System.reset();
+		}
 	}
 	
 	float desired_dyaw = 180*(PPM_CHN_DATA[3] - (PPM_HI+PPM_LO)/2)/(PPM_HI - PPM_LO);
