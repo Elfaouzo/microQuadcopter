@@ -8,7 +8,7 @@
 #include "LSM6.h"
 
 /*
-Revision 134 - branch for uint8 throttle & mc, second trial
+Revision 134 - branch for uint8 throttle & mc, third trial
 Motor control:  OK.
 Wifi link:      OK. 
 Timing schedul: OK.
@@ -125,7 +125,7 @@ TO BE TESTED:
 #define HEART_BEAT
 
 #define CONTROL
-#define DIAGNOSTICS                                                            
+//#define DIAGNOSTICS                                                            
 #define WIFI_LISTEN
 #define IMU_ENABLE
 #define HEART_BEAT_THR 50
@@ -370,10 +370,8 @@ float error2_alt, corr2I_alt, corr2_alt, error2Prev_alt;
 #endif
 
 float biasRollRate, biasPitchRate, biasYawRate;
-int16_t mc1, mc2, mc3, mc4, throttle, staticThrottle;
-int16_t takeOffThrottle, flightThrottle;
-uint16_t throttle1;
-uint8_t throttle2;
+uint8_t mc1, mc2, mc3, mc4, throttle, staticThrottle;
+uint8_t takeOffThrottle, flightThrottle;
 float totalGyroYawRate, totalGyroRollRate, totalGyroPitchRate, totalAccPitch, totalAccRoll;
 
 float kxGyro = KalmanGainGyro;
@@ -845,9 +843,7 @@ void loop() {
             }*/
             //publish_altimeter();
 			//publish_battStatus();
-			throttle1=(uint16_t)(throttle);
-			throttle2=(uint8_t)(throttle1);
-			Particle.publish(String(throttle) + " - " + String(throttle1) + " - " + String(throttle2));
+
             currentTimeDebug = System.ticks();
         }
     #endif
@@ -1562,10 +1558,10 @@ void update_correction_parameters()
 
 void update_motors_control()
 {
-  analogWrite(MOTOR_1_PIN, mc1);
-  analogWrite(MOTOR_2_PIN, mc2);
-  analogWrite(MOTOR_3_PIN, mc3);
-  analogWrite(MOTOR_4_PIN, mc4);
+  analogWrite(MOTOR_1_PIN, (int)mc1);
+  analogWrite(MOTOR_2_PIN, (int)mc2);
+  analogWrite(MOTOR_3_PIN, (int)mc3);
+  analogWrite(MOTOR_4_PIN, (int)mc4);
 }
 
 void update_control_mixing()
@@ -1578,27 +1574,27 @@ void update_control_mixing()
 		#endif
 		
         #ifdef INVERT_CMD
-        mc1 = (int16_t)(-corr2_pitch -corr_yaw + corr_alt_total);
-        mc4 = (int16_t)(corr2_pitch -corr_yaw + corr_alt_total);
-        mc2 = (int16_t)(corr2_roll + corr_yaw + corr_alt_total);
-        mc3 = (int16_t)(-corr2_roll + corr_yaw + corr_alt_total);
+        mc1 = convertFloatToInt((-corr2_pitch -corr_yaw + corr_alt_total));
+        mc4 = convertFloatToInt((corr2_pitch -corr_yaw + corr_alt_total));
+        mc2 = convertFloatToInt((corr2_roll + corr_yaw + corr_alt_total));
+        mc3 = convertFloatToInt((-corr2_roll + corr_yaw + corr_alt_total));
         #else
-        mc1 = (int16_t)(corr2_pitch -corr_yaw + corr_alt_total);
-        mc4 = (int16_t)(-corr2_pitch -corr_yaw + corr_alt_total);
-        mc2 = (int16_t)(corr2_roll + corr_yaw + corr_alt_total);
-        mc3 = (int16_t)(-corr2_roll + corr_yaw + corr_alt_total);
+        mc1 = convertFloatToInt((corr2_pitch -corr_yaw + corr_alt_total));
+        mc4 = convertFloatToInt((-corr2_pitch -corr_yaw + corr_alt_total));
+        mc2 = convertFloatToInt((corr2_roll + corr_yaw + corr_alt_total));
+        mc3 = convertFloatToInt((-corr2_roll + corr_yaw + corr_alt_total));
         #endif
     #else
         #ifdef INVERT_CMD
-        mc1 = (int16_t)(-corr_pitch -corr_yaw + corr_alt_total);
-        mc4 = (int16_t)(corr_pitch -corr_yaw + corr_alt_total);
-        mc2 = (int16_t)(corr_roll + corr_yaw + corr_alt_total);
-        mc3 = (int16_t)(-corr_roll + corr_yaw + corr_alt_total);
+        mc1 = convertFloatToInt((-corr_pitch -corr_yaw + corr_alt_total));
+        mc4 = convertFloatToInt((corr_pitch -corr_yaw + corr_alt_total));
+        mc2 = convertFloatToInt((corr_roll + corr_yaw + corr_alt_total));
+        mc3 = convertFloatToInt((-corr_roll + corr_yaw + corr_alt_total));
         #else
-        mc1 = (int16_t)(corr_pitch -corr_yaw + corr_alt_total);
-        mc4 = (int16_t)(-corr_pitch -corr_yaw + corr_alt_total);
-        mc2 = (int16_t)(corr_roll + corr_yaw + corr_alt_total);
-        mc3 = (int16_t)(-corr_roll + corr_yaw + corr_alt_total);
+        mc1 = convertFloatToInt((corr_pitch -corr_yaw + corr_alt_total));
+        mc4 = convertFloatToInt((-corr_pitch -corr_yaw + corr_alt_total));
+        mc2 = convertFloatToInt((corr_roll + corr_yaw + corr_alt_total));
+        mc3 = convertFloatToInt((-corr_roll + corr_yaw + corr_alt_total));
         #endif
 
     #endif
@@ -1803,8 +1799,11 @@ void PPM_Interprete()
 	desired_roll = 180*(PPM_CHN_DATA[0] - (PPM_HI+PPM_LO)/2)/(PPM_HI - PPM_LO); //Shall be between [-0.5;0.5] or [-90;90]
 	desired_pitch = 180*(PPM_CHN_DATA[1] - (PPM_HI+PPM_LO)/2)/(PPM_HI - PPM_LO);
 	
-	throttle = (int16_t)(255*(PPM_CHN_DATA[2] - PPM_LO)/(PPM_HI - PPM_LO));
-	if(throttle < 0){throttle=0;}
+	int16_t throttle_tmp = (int16_t)(255*(PPM_CHN_DATA[2] - PPM_LO)/(PPM_HI - PPM_LO));
+	if(throttle_tmp >= 255){throttle_tmp=255;};
+	if(throttle_tmp <= 0){throttle_tmp=0;};
+	throttle=(uint8_t)throttle_tmp;
+	
 	if(throttle>=250 && PPM_init_ok==0)
 	{
 		PPM_init_ok=1;
@@ -2016,7 +2015,20 @@ void testMotor(int motor)
     }
 }
 
-
+uint8_t convertFloatToInt(float in)
+{
+	if(in <= 0)
+	{
+		return 0;
+	}else if(in>=255)
+	{
+		return 255;
+	}else
+	{
+		return (uint8_t)in;		
+	}
+			
+}
 uint8_t throttleSaturation(uint8_t thrust_unSat)
 {
   if(thrust_unSat > 255)
