@@ -712,6 +712,12 @@ void setup() {
 }
 
 void loop() {
+	#ifdef PPM_RECV
+	if(state==0)
+	{
+		standby();
+	}
+	#endif
 	#ifdef BATT_SOC
 		currentTimeBattTmp = (System.ticks() - currentTimeBatt)/scaleTick;
         if(currentTimeBattTmp >= samplingTimeBatt)
@@ -1839,25 +1845,24 @@ void PPM_Interprete()
 			currentTimeTO=System.ticks();
 		}
 		#endif
-				
 	}
 	
 	if(PPM_init_ok != 2)
 	{
-		PPM_CHN_DATA_4_PREV=PPM_CHN_DATA[4];
-		PPM_CHN_DATA_5_PREV=PPM_CHN_DATA[5];
+	   PPM_CHN_DATA_4_PREV=PPM_CHN_DATA[4];
+	   PPM_CHN_DATA_5_PREV=PPM_CHN_DATA[5];
 	}
 	else
 	{
-		if(PPM_CHN_DATA[4]!=PPM_CHN_DATA_4_PREV)
+		if(PPM_CHN_DATA[4]<1500 && PPM_CHN_DATA_4_PREV>1500 || PPM_CHN_DATA[4]>1500 && PPM_CHN_DATA_4_PREV<1500)
 		{
 			if(state!=0)
 			{
-				standby();
+				state=0;
 			}
 		}
 
-		if(PPM_CHN_DATA[5]!=PPM_CHN_DATA_5_PREV)
+	    if(PPM_CHN_DATA[5]<1500 && PPM_CHN_DATA_5_PREV>1500 || PPM_CHN_DATA[5]>1500 && PPM_CHN_DATA_5_PREV<1500)
 		{
 			System.reset();
 		}
