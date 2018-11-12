@@ -1,13 +1,5 @@
 # microQuadcopter
 
-This software is intended for particle Photon board. It is meant to be used within the particle web IDE.
-The inputs of the system are:
-  - IMU (via i2c).
-  - Battery voltage reading (via analog input).
-  - PPM RC receiver (via digital inputs).
-  - TCP server (via onboard wifi module).
-  
-The outputs of the system are:
-  - 4x PWM motor control (PWM outputs).
-  - Status LED (digital output).
-
+Channel 5 and 6 of the RC transmitter can be used as follow:
+RC channel 5 is to be used to trigger a data logging over TCP.
+RC channel 6 is to be used to trigger an ECU reset.
