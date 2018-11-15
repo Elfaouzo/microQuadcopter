@@ -1808,7 +1808,10 @@ void PPM_Interprete()
 	desired_roll = 180*(PPM_CHN_DATA[0] - (PPM_HI+PPM_LO)/2)/(PPM_HI - PPM_LO); //Shall be between [-0.5;0.5] or [-90;90]
 	desired_pitch = 180*(PPM_CHN_DATA[1] - (PPM_HI+PPM_LO)/2)/(PPM_HI - PPM_LO);
 	
-	throttle = 255*(PPM_CHN_DATA[2] - PPM_LO)/(PPM_HI - PPM_LO);
+	int16_t throttle_tmp = (int16_t)(255*(PPM_CHN_DATA[2] - PPM_LO)/(PPM_HI - PPM_LO));
+	if(throttle_tmp >= 255){throttle_tmp=255;};
+	if(throttle_tmp <= 0){throttle_tmp=0;};
+	throttle=(uint8_t)throttle_tmp;
 	if(throttle>=250 && PPM_init_ok==0)
 	{
 		PPM_init_ok=1;
