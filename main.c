@@ -8,7 +8,7 @@
 #include "LSM6.h"
 
 /*
-Revision 134 - ram reduction
+Revision 134
 Motor control:  OK.
 Wifi link:      OK. 
 Timing schedul: OK.
@@ -370,7 +370,9 @@ float error2_alt, corr2I_alt, corr2_alt, error2Prev_alt;
 #endif
 
 float biasRollRate, biasPitchRate, biasYawRate;
-uint8_t mc1, mc2, mc3, mc4, throttle, staticThrottle, takeOffThrottle, flightThrottle;
+float mc1, mc2, mc3, mc4, throttle, staticThrottle;
+
+float takeOffThrottle, flightThrottle;
 
 float totalGyroYawRate, totalGyroRollRate, totalGyroPitchRate, totalAccPitch, totalAccRoll;
 
@@ -1583,27 +1585,27 @@ void update_control_mixing()
 		#endif
 		
         #ifdef INVERT_CMD
-        mc1 = convertFloatToInt(-corr2_pitch -corr_yaw + corr_alt_total);
-        mc4 = convertFloatToInt(corr2_pitch -corr_yaw + corr_alt_total);
-        mc2 = convertFloatToInt(corr2_roll + corr_yaw + corr_alt_total);
-        mc3 = convertFloatToInt(-corr2_roll + corr_yaw + corr_alt_total);
+        mc1 = -corr2_pitch -corr_yaw + corr_alt_total;
+        mc4 = corr2_pitch -corr_yaw + corr_alt_total;
+        mc2 = corr2_roll + corr_yaw + corr_alt_total;
+        mc3 = -corr2_roll + corr_yaw + corr_alt_total;
         #else
-        mc1 = convertFloatToInt(corr2_pitch -corr_yaw + corr_alt_total);
-        mc4 = convertFloatToInt(-corr2_pitch -corr_yaw + corr_alt_total);
-        mc2 = convertFloatToInt(corr2_roll + corr_yaw + corr_alt_total);
-        mc3 = convertFloatToInt(-corr2_roll + corr_yaw + corr_alt_total);
+        mc1 = corr2_pitch -corr_yaw + corr_alt_total;
+        mc4 = -corr2_pitch -corr_yaw + corr_alt_total;
+        mc2 = corr2_roll + corr_yaw + corr_alt_total;
+        mc3 = -corr2_roll + corr_yaw + corr_alt_total;
         #endif
     #else
         #ifdef INVERT_CMD
-        mc1 = convertFloatToInt(-corr_pitch -corr_yaw + corr_alt_total);
-        mc4 = convertFloatToInt(corr_pitch -corr_yaw + corr_alt_total);
-        mc2 = convertFloatToInt(corr_roll + corr_yaw + corr_alt_total);
-        mc3 = convertFloatToInt(-corr_roll + corr_yaw + corr_alt_total);
+        mc1 = -corr_pitch -corr_yaw + corr_alt_total;
+        mc4 = corr_pitch -corr_yaw + corr_alt_total;
+        mc2 = corr_roll + corr_yaw + corr_alt_total;
+        mc3 = -corr_roll + corr_yaw + corr_alt_total;
         #else
-        mc1 = convertFloatToInt(corr_pitch -corr_yaw + corr_alt_total);
-        mc4 = convertFloatToInt(-corr_pitch -corr_yaw + corr_alt_total);
-        mc2 = convertFloatToInt(corr_roll + corr_yaw + corr_alt_total);
-        mc3 = convertFloatToInt(-corr_roll + corr_yaw + corr_alt_total);
+        mc1 = corr_pitch -corr_yaw + corr_alt_total;
+        mc4 = -corr_pitch -corr_yaw + corr_alt_total;
+        mc2 = corr_roll + corr_yaw + corr_alt_total;
+        mc3 = -corr_roll + corr_yaw + corr_alt_total;
         #endif
 
     #endif
@@ -1713,8 +1715,8 @@ void updateDynamicThrottles(float soc)
 	{
 		if(soc <= OCV_S[i] && soc > OCV_S[i-1])
 		{
-			takeOffThrottle = convertFloatToInt(OCV_ThrTo[i-1] + (OCV_ThrTo[i]-OCV_ThrTo[i-1])*(soc-OCV_S[i-1])/(OCV_S[i]-OCV_S[i-1]));
-			flightThrottle = convertFloatToInt(OCV_ThrFl[i-1] + (OCV_ThrFl[i]-OCV_ThrFl[i-1])*(soc-OCV_S[i-1])/(OCV_S[i]-OCV_S[i-1]));	
+			takeOffThrottle = OCV_ThrTo[i-1] + (OCV_ThrTo[i]-OCV_ThrTo[i-1])*(soc-OCV_S[i-1])/(OCV_S[i]-OCV_S[i-1]);
+			flightThrottle = OCV_ThrFl[i-1] + (OCV_ThrFl[i]-OCV_ThrFl[i-1])*(soc-OCV_S[i-1])/(OCV_S[i]-OCV_S[i-1]);	
 		}
 	}
 }
@@ -2042,7 +2044,7 @@ void testMotor(int motor)
 }
 
 
-uint8_t throttleSaturation(uint8_t thrust_unSat)
+int throttleSaturation(int thrust_unSat)
 {
   if(thrust_unSat > 255)
   {
