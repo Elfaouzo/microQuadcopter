@@ -69,8 +69,8 @@ TO BE TESTED:
 				    - Logs show no issues with the set points.
 				    - Behaviour seems to be dramatic and the quad difficult to control: controls are too sensitive! reduce effect of the controller by dividing by 5 or 10. OK.
 					- Test again.
-				- DataLogging shall be at least 10s. Impossible but 6s instead.
-				- Flash and update .m script for dataLogging.
+				- DataLogging shall be at least 10s. OK!
+				- Flash and update .m script for dataLogging. OK!
 				- Trigger impulses in roll and pitch and log.
 				
 				
@@ -261,7 +261,7 @@ TO BE TESTED:
     #define dataLoggingBufferSize 1200
 #endif
 #ifdef dataLoggingControlAnalysis
-    #define dataLoggingBufferSize 800
+    #define dataLoggingBufferSize 1500
 #endif
 #ifdef dataLoggingMAGAnalysis
     #define dataLoggingBufferSize 1000
