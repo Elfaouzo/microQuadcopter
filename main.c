@@ -152,22 +152,22 @@ TO BE TESTED:
 #define PIDLevel 2
 #define PIDAltLevel 1
 
-#define PID_P_roll 1
-#define PID_I_roll 5
-#define PID_D_roll 1
+#define PID_P_roll 1					//1
+#define PID_I_roll 5					//5
+#define PID_D_roll 1					//1
 
-#define PID2_P_roll 0.8
-#define PID2_I_roll 5
-#define PID2_D_roll 0.01
+#define PID2_P_roll 0.8					//0.8
+#define PID2_I_roll 5					//5
+#define PID2_D_roll 0.01				//0.01
 
 
-#define PID_P_pitch 3				//10
-#define PID_I_pitch 10				//0
-#define PID_D_pitch 0.5				//0
+#define PID_P_pitch 3					//3
+#define PID_I_pitch 10					//10
+#define PID_D_pitch 0.5					//0.5
 
-#define PID2_P_pitch 0.6			//0.3
-#define PID2_I_pitch 4				//4
-#define PID2_D_pitch 0.012			//0.005
+#define PID2_P_pitch 0.6				//0.6
+#define PID2_I_pitch 4					//4
+#define PID2_D_pitch 0.012				//0.012
 
 #define PID_P_yaw 2
 #define PID_I_yaw 0
@@ -261,7 +261,7 @@ TO BE TESTED:
     #define dataLoggingBufferSize 1200
 #endif
 #ifdef dataLoggingControlAnalysis
-    #define dataLoggingBufferSize 800
+    #define dataLoggingBufferSize 1800
 #endif
 #ifdef dataLoggingMAGAnalysis
     #define dataLoggingBufferSize 1000
@@ -520,10 +520,6 @@ struct dataLog{
   float pitchLog[dataLoggingBufferSize];
   float rollLog[dataLoggingBufferSize];
   uint8_t throttleLog[dataLoggingBufferSize];
-  uint8_t mc1Log[dataLoggingBufferSize];
-  uint8_t mc2Log[dataLoggingBufferSize];
-  uint8_t mc3Log[dataLoggingBufferSize];
-  uint8_t mc4Log[dataLoggingBufferSize];
   float error_rollLog[dataLoggingBufferSize];
   float error_pitchLog[dataLoggingBufferSize];
   uint16_t idx;
@@ -2245,10 +2241,6 @@ void updateLog()
     buffer.pitchLog[buffer.idx] = pitch;
     buffer.rollLog[buffer.idx] = roll;
     buffer.throttleLog[buffer.idx] = convertFloatToInt(throttle);
-    buffer.mc1Log[buffer.idx] = convertFloatToInt(mc1);
-	buffer.mc2Log[buffer.idx] = convertFloatToInt(mc2);
-	buffer.mc3Log[buffer.idx] = convertFloatToInt(mc3);
-	buffer.mc4Log[buffer.idx] = convertFloatToInt(mc4);
 	buffer.error_rollLog[buffer.idx] = error_roll;
 	buffer.error_pitchLog[buffer.idx] = error_pitch;
 	buffer.idx++;
@@ -2395,7 +2387,7 @@ void transmit_DataLogChunk()
     #endif
     #ifdef dataLoggingControlAnalysis
     int i;
-	tmp = "Time,roll,pitch,throttle,mc1,mc2,mc3,mc4,errorRoll, errorPitch";
+	tmp = "Time,roll,pitch,throttle,errorRoll, errorPitch";
 	send_tcp(tmp);
 	for(i=0;i<dataLoggingBufferSize;i++)
 	{
@@ -2403,11 +2395,6 @@ void transmit_DataLogChunk()
 	    tmp += String(buffer.rollLog[i], 2) + ",";
 		tmp += String(buffer.pitchLog[i], 2) + ",";
 		tmp += String(buffer.throttleLog[i]) + ","; 
-		tmp += String(buffer.mc1Log[i]) + ","; 
-		tmp += String(buffer.mc2Log[i]) + ","; 
-		send_tcp(tmp);
-		tmp = String(buffer.mc3Log[i]) + ",";
-		tmp += String(buffer.mc4Log[i]) + ",";
 		tmp += String(buffer.error_rollLog[i], 2) + ","; 
 		tmp += String(buffer.error_pitchLog[i], 2); 
 		send_tcp(tmp);
