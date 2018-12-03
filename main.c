@@ -2389,9 +2389,9 @@ void transmit_DataLogChunk()
     int i;
 	tmp = "";
 	tmp +="k1pr,k1ir,k1dr,k2pr,k2ir,k2dr,k1pp,k1ip,k1dp,k2pp,k2ip,k2dp,soc\n";
-	tmp += String(PID_P_roll)+","+String(PID_I_roll)+","+String(PID_D_roll)+","+String(PID2_P_roll)+","+String(PID2_I_roll)+","+String(PID2_D_roll)+"\n";
-	tmp += String(PID_P_pitch)+","+String(PID_I_pitch)+","+String(PID_D_pitch)+","+String(PID2_P_pitch)+","+String(PID2_I_pitch)+","+String(PID2_D_pitch)+"\n";
-	tmp += String(battSOC);
+	tmp += String(PID_P_roll)+","+String(PID_I_roll)+","+String(PID_D_roll)+","+String(PID2_P_roll)+","+String(PID2_I_roll)+","+String(PID2_D_roll)+",";
+	tmp += String(PID_P_pitch)+","+String(PID_I_pitch)+","+String(PID_D_pitch)+","+String(PID2_P_pitch)+","+String(PID2_I_pitch)+","+String(PID2_D_pitch)+",";
+	tmp += String(battSOC)+"\n";
 	tmp += "Time,roll,pitch,throttle,errorRoll, errorPitch";
 	send_tcp(tmp);
 	for(i=0;i<dataLoggingBufferSize;i++)
