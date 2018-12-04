@@ -307,6 +307,11 @@ SYSTEM_THREAD(ENABLED);
 
 /*      VARIABLES    */
 
+
+#ifdef SW_BAL
+float roll_unbalance, pitch_unbalance;
+#endif 
+
 #ifdef PPM_RECV
 void PPM_Read(void);
 int PPM_init_ok = 0;
@@ -608,15 +613,12 @@ void setup() {
    
   #ifdef BATT_SOC
 	Batt_Read();
-	delay(1500);
+	//delay(1500);
 	String socDisplay = "SoC (Ocv) [%]: " + String(battSOC) + " - OCV [V]: " + String(battOCV);
 	Particle.publish("SYS", socDisplay);
-	delay(1500);
+	delay(1000);
 	updateDynamicThrottles(battSOC);		//updates takeOffThrottle
 	updateDynamicTOTimeOut(battSOC);
-	socDisplay = "SoC (Ocv) [%]: " + String(battSOC) + " - ThrToff/ThrFl: " + String(takeOffThrottle)+ "/" + String(flightThrottle) + " - TOTiOut [ms]: " + String(timeOutTO);
-	Particle.publish("SYS", socDisplay);
-	delay(1500);
   #else
 	takeOffThrottle=TAKEOFF_AUTO_Thr;	
 	flightThrottle=FLIGHT_AUTO_Thr;
@@ -650,9 +652,7 @@ void setup() {
   delay(500);
   uint32_t FreeMem = System.freeMemory();
   String memDisplay = "Available memory: " + String(FreeMem);
-  Particle.publish("SYS",memDisplay);
-  delay(1000);
-  String tempDisplay = "Board temperature: " + String(temperature);
+  String tempDisplay = "Board temperature: " + String(temperature) + " - " + memDisplay;
   Particle.publish("SYS",tempDisplay);
   #ifndef AUTOMATIC_MODE
     Particle.process();
@@ -667,7 +667,7 @@ void setup() {
   #endif
   if(state == 3 || state == 4)
   {
-	delay(1000);
+	delay(500);
 	Particle.publish("SYS","State active");
   }
   else
@@ -687,7 +687,7 @@ void setup() {
   
   #ifdef DIAGNOSTICS
     //check_IMU_rationality();
-    delay(200);
+    //delay(200);
     //check_IMU_rationality();
   #endif
   
