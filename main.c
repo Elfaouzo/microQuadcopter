@@ -1805,7 +1805,7 @@ void PPM_Read()
 }
 
 void PPM_Interprete()
-{
+{/*
 	#ifdef PPM_RECV
 	desired_roll = 180*(PPM_CHN_DATA[0] - (PPM_HI+PPM_LO)/2)/(PPM_HI - PPM_LO); //Shall be between [-0.5;0.5] or [-90;90]
 	desired_pitch = 180*(PPM_CHN_DATA[1] - (PPM_HI+PPM_LO)/2)/(PPM_HI - PPM_LO);
@@ -1847,6 +1847,7 @@ void PPM_Interprete()
 		#endif
 	}
 	
+	
 	if(PPM_init_ok != 2)
 	{
 	   PPM_CHN_DATA_4_PREV=PPM_CHN_DATA[4];
@@ -1869,7 +1870,7 @@ void PPM_Interprete()
 	}
 	
 	float desired_dyaw = 180*(PPM_CHN_DATA[3] - (PPM_HI+PPM_LO)/2)/(PPM_HI - PPM_LO);
-	
+
 	#ifdef PPM_ATTITUDE_MAX
 	desired_roll = desired_roll*PPM_ATTITUDE_MAX/90;
 	desired_pitch = desired_pitch*PPM_ATTITUDE_MAX/90;
@@ -1879,6 +1880,7 @@ void PPM_Interprete()
 	desired_yaw = desired_yaw_init + desired_dyaw;
 	
 	#endif
+	*/
 }
 
 
