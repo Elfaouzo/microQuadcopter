@@ -153,11 +153,11 @@ TO BE TESTED:
 #define PIDAltLevel 1
 
 #define PID_P_roll 1
-#define PID_I_roll 5
+#define PID_I_roll 5*0
 #define PID_D_roll 1
 
 #define PID2_P_roll 0.8
-#define PID2_I_roll 5
+#define PID2_I_roll 5*0
 #define PID2_D_roll 0.01
 
 
@@ -198,7 +198,7 @@ TO BE TESTED:
 
 #ifdef SW_BAL
 #define TOTAL_THR 15
-#define ROLL_UNB 1
+#define ROLL_UNB 0.1f
 #define PITCH_UNB 0
 #endif
 
@@ -613,10 +613,10 @@ void setup() {
    
   #ifdef BATT_SOC
 	Batt_Read();
-	//delay(1500);
+	delay(500);
 	String socDisplay = "SoC (Ocv) [%]: " + String(battSOC) + " - OCV [V]: " + String(battOCV);
 	Particle.publish("SYS", socDisplay);
-	delay(1000);
+	delay(500);
 	updateDynamicThrottles(battSOC);		//updates takeOffThrottle
 	updateDynamicTOTimeOut(battSOC);
   #else
@@ -1545,8 +1545,8 @@ void update_correction_parameters()
     roll_prev = roll;
     pitch_prev = pitch;
 	#ifdef SW_BAL
-	roll_unbalance=(ROLL_UNB/TOTAL_THR)*255;
-	pitch_unbalance=(PITCH_UNB/TOTAL_THR)*255;
+	roll_unbalance=(ROLL_UNB)*255;
+	pitch_unbalance=(PITCH_UNB)*255;
     #endif
   if(state < 4)
   {
@@ -1605,14 +1605,7 @@ void update_control_mixing()
         mc4 = corr2_pitch -corr_yaw + corr_alt_total;
         mc2 = corr2_roll + corr_yaw + corr_alt_total;
         mc3 = -corr2_roll + corr_yaw + corr_alt_total;
-		#ifdef SW_BAL
-		mc2+=roll_unbalance*0.5;
-		mc3-=roll_unbalance*0.5;
-		mc1+=pitch_unbalance*0.5;
-		mc4-=pitch_unbalance*0.5;
-		#endif
-		
-        #else
+		#else
         mc1 = corr2_pitch -corr_yaw + corr_alt_total;
         mc4 = -corr2_pitch -corr_yaw + corr_alt_total;
         mc2 = corr2_roll + corr_yaw + corr_alt_total;
@@ -1632,6 +1625,13 @@ void update_control_mixing()
         #endif
 
     #endif
+	
+	#ifdef SW_BAL
+		mc2+=roll_unbalance*0.5;
+		mc3-=roll_unbalance*0.5;
+		mc1+=pitch_unbalance*0.5;
+		mc4-=pitch_unbalance*0.5;
+	#endif
     /* Adding the throttle */ 
   if(ALT_AUTO == 0)
   {
