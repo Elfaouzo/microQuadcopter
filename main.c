@@ -194,6 +194,14 @@ TO BE TESTED:
 #define PID_D_alt_speed 0
 #endif
 
+#define SW_BAL
+
+#ifdef SW_BAL
+#define TOTAL_THR 15
+#define ROLL_UNB 1
+#define PITCH_UNB 0
+#endif
+
 //#define TPA_ENABLE
 #define PID_THR_LO 140									//Take off threshold under which PID is [0,0,0]
 #define PID_COEF_HI 0.7									//By how much the PID has to be damped when THR is =255 compared to when it is PID_THR_LO
@@ -1536,7 +1544,10 @@ void update_correction_parameters()
     
     roll_prev = roll;
     pitch_prev = pitch;
-    
+	#ifdef SW_BAL
+	roll_unbalance=(ROLL_UNB/TOTAL_THR)*255;
+	pitch_unbalance=(PITCH_UNB/TOTAL_THR)*255;
+    #endif
   if(state < 4)
   {
 	corrI_roll = 0;
@@ -1552,6 +1563,11 @@ void update_correction_parameters()
 	corr_alt = 0;
 	corr_alt_speed = 0;
 	corr_alt_total = 0;
+	
+	#ifdef SW_BAL
+	roll_unbalance=0;
+	pitch_unbalance=0;
+	#endif
   }
     
   #else
@@ -1589,6 +1605,13 @@ void update_control_mixing()
         mc4 = corr2_pitch -corr_yaw + corr_alt_total;
         mc2 = corr2_roll + corr_yaw + corr_alt_total;
         mc3 = -corr2_roll + corr_yaw + corr_alt_total;
+		#ifdef SW_BAL
+		mc2+=roll_unbalance*0.5;
+		mc3-=roll_unbalance*0.5;
+		mc1+=pitch_unbalance*0.5;
+		mc4-=pitch_unbalance*0.5;
+		#endif
+		
         #else
         mc1 = corr2_pitch -corr_yaw + corr_alt_total;
         mc4 = -corr2_pitch -corr_yaw + corr_alt_total;
