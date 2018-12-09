@@ -2395,7 +2395,12 @@ void transmit_DataLogChunk()
     #endif
     #ifdef dataLoggingControlAnalysis
     int i;
-	tmp = "Time,roll,pitch,throttle,mc1,mc2,mc3,mc4,errorRoll, errorPitch";
+	tmp = "";
+	tmp +="k1pr,k1ir,k1dr,k2pr,k2ir,k2dr,k1pp,k1ip,k1dp,k2pp,k2ip,k2dp,soc\n";
+	tmp += String(PID_P_roll)+","+String(PID_I_roll)+","+String(PID_D_roll)+","+String(PID2_P_roll)+","+String(PID2_I_roll)+","+String(PID2_D_roll)+",";
+	tmp += String(PID_P_pitch)+","+String(PID_I_pitch)+","+String(PID_D_pitch)+","+String(PID2_P_pitch)+","+String(PID2_I_pitch)+","+String(PID2_D_pitch)+",";
+	tmp += String(battSOC)+"\n";
+	tmp += "Time,roll,pitch,throttle,errorRoll, errorPitch";
 	send_tcp(tmp);
 	for(i=0;i<dataLoggingBufferSize;i++)
 	{
@@ -2403,11 +2408,6 @@ void transmit_DataLogChunk()
 	    tmp += String(buffer.rollLog[i], 2) + ",";
 		tmp += String(buffer.pitchLog[i], 2) + ",";
 		tmp += String(buffer.throttleLog[i]) + ","; 
-		tmp += String(buffer.mc1Log[i]) + ","; 
-		tmp += String(buffer.mc2Log[i]) + ","; 
-		send_tcp(tmp);
-		tmp = String(buffer.mc3Log[i]) + ",";
-		tmp += String(buffer.mc4Log[i]) + ",";
 		tmp += String(buffer.error_rollLog[i], 2) + ","; 
 		tmp += String(buffer.error_pitchLog[i], 2); 
 		send_tcp(tmp);
