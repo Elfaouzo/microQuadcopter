@@ -411,8 +411,8 @@ const float OCV_S[] = {0.00, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.9
 const int OCV_size = 11;
 float OCV_offset = 0.13*0;	//Photon drains 80mA in average
 
-const float OCV_ThrTo[]={235., 235., 225., 225., 220., 210., 200., 200., 190., 190., 180.};			//Static throttle at take-off
-const float OCV_ThrFl[]={225., 225., 210., 200., 170., 160., 150., 140., 140., 130., 120.};			//Static throttle during flight
+const float OCV_ThrTo[]={220., 220., 220., 220., 220., 210., 200., 200., 190., 190., 180.};			//Static throttle at take-off
+const float OCV_ThrFl[]={200., 200., 200., 200., 170., 160., 150., 150., 150., 140., 140.};			//Static throttle during flight
 
 const float OCV_TOTiOut[]={1000., 1000., 1000., 800., 800., 800., 800., 800., 800., 800., 800.};			//Take-off timeout in ms
 #endif
