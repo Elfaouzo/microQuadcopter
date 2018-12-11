@@ -194,6 +194,14 @@ TO BE TESTED:
 #define PID_D_alt_speed 0
 #endif
 
+//#define SW_BAL
+
+#ifdef SW_BAL
+#define TOTAL_THR 15
+#define ROLL_UNB 0.1f
+#define PITCH_UNB 0
+#endif
+
 //#define TPA_ENABLE
 #define PID_THR_LO 140									//Take off threshold under which PID is [0,0,0]
 #define PID_COEF_HI 0.7									//By how much the PID has to be damped when THR is =255 compared to when it is PID_THR_LO
@@ -299,6 +307,11 @@ SYSTEM_THREAD(ENABLED);
 
 /*      VARIABLES    */
 
+
+#ifdef SW_BAL
+float roll_unbalance, pitch_unbalance;
+#endif 
+
 #ifdef PPM_RECV
 void PPM_Read(void);
 int PPM_init_ok = 0;
@@ -398,8 +411,8 @@ const float OCV_S[] = {0.00, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.9
 const int OCV_size = 11;
 float OCV_offset = 0.13*0;	//Photon drains 80mA in average
 
-const float OCV_ThrTo[]={235., 235., 225., 225., 220., 210., 200., 200., 190., 190., 180.};			//Static throttle at take-off
-const float OCV_ThrFl[]={225., 225., 210., 200., 170., 160., 150., 140., 140., 130., 120.};			//Static throttle during flight
+const float OCV_ThrTo[]={220., 220., 220., 220., 220., 210., 200., 200., 190., 190., 180.};			//Static throttle at take-off
+const float OCV_ThrFl[]={200., 200., 200., 200., 170., 160., 150., 150., 150., 140., 140.};			//Static throttle during flight
 
 const float OCV_TOTiOut[]={1000., 1000., 1000., 800., 800., 800., 800., 800., 800., 800., 800.};			//Take-off timeout in ms
 #endif
@@ -600,15 +613,12 @@ void setup() {
    
   #ifdef BATT_SOC
 	Batt_Read();
-	delay(1500);
+	delay(500);
 	String socDisplay = "SoC (Ocv) [%]: " + String(battSOC) + " - OCV [V]: " + String(battOCV);
 	Particle.publish("SYS", socDisplay);
-	delay(1500);
+	delay(500);
 	updateDynamicThrottles(battSOC);		//updates takeOffThrottle
 	updateDynamicTOTimeOut(battSOC);
-	socDisplay = "SoC (Ocv) [%]: " + String(battSOC) + " - ThrToff/ThrFl: " + String(takeOffThrottle)+ "/" + String(flightThrottle) + " - TOTiOut [ms]: " + String(timeOutTO);
-	Particle.publish("SYS", socDisplay);
-	delay(1500);
   #else
 	takeOffThrottle=TAKEOFF_AUTO_Thr;	
 	flightThrottle=FLIGHT_AUTO_Thr;
@@ -642,9 +652,7 @@ void setup() {
   delay(500);
   uint32_t FreeMem = System.freeMemory();
   String memDisplay = "Available memory: " + String(FreeMem);
-  Particle.publish("SYS",memDisplay);
-  delay(1000);
-  String tempDisplay = "Board temperature: " + String(temperature);
+  String tempDisplay = "Board temperature: " + String(temperature) + " - " + memDisplay;
   Particle.publish("SYS",tempDisplay);
   #ifndef AUTOMATIC_MODE
     Particle.process();
@@ -659,7 +667,7 @@ void setup() {
   #endif
   if(state == 3 || state == 4)
   {
-	delay(1000);
+	delay(500);
 	Particle.publish("SYS","State active");
   }
   else
@@ -679,7 +687,7 @@ void setup() {
   
   #ifdef DIAGNOSTICS
     //check_IMU_rationality();
-    delay(200);
+    //delay(200);
     //check_IMU_rationality();
   #endif
   
@@ -1536,7 +1544,10 @@ void update_correction_parameters()
     
     roll_prev = roll;
     pitch_prev = pitch;
-    
+	#ifdef SW_BAL
+	roll_unbalance=(ROLL_UNB)*255;
+	pitch_unbalance=(PITCH_UNB)*255;
+    #endif
   if(state < 4)
   {
 	corrI_roll = 0;
@@ -1552,6 +1563,11 @@ void update_correction_parameters()
 	corr_alt = 0;
 	corr_alt_speed = 0;
 	corr_alt_total = 0;
+	
+	#ifdef SW_BAL
+	roll_unbalance=0;
+	pitch_unbalance=0;
+	#endif
   }
     
   #else
@@ -1589,7 +1605,7 @@ void update_control_mixing()
         mc4 = corr2_pitch -corr_yaw + corr_alt_total;
         mc2 = corr2_roll + corr_yaw + corr_alt_total;
         mc3 = -corr2_roll + corr_yaw + corr_alt_total;
-        #else
+		#else
         mc1 = corr2_pitch -corr_yaw + corr_alt_total;
         mc4 = -corr2_pitch -corr_yaw + corr_alt_total;
         mc2 = corr2_roll + corr_yaw + corr_alt_total;
@@ -1609,6 +1625,13 @@ void update_control_mixing()
         #endif
 
     #endif
+	
+	#ifdef SW_BAL
+		mc2+=roll_unbalance*0.5;
+		mc3-=roll_unbalance*0.5;
+		mc1+=pitch_unbalance*0.5;
+		mc4-=pitch_unbalance*0.5;
+	#endif
     /* Adding the throttle */ 
   if(ALT_AUTO == 0)
   {
