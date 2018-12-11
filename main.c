@@ -152,12 +152,12 @@ TO BE TESTED:
 #define PIDLevel 2
 #define PIDAltLevel 1
 
-#define PID_P_roll 1
-#define PID_I_roll 5
+#define PID_P_roll 4
+#define PID_I_roll 5*0
 #define PID_D_roll 1
 
 #define PID2_P_roll 0.8
-#define PID2_I_roll 5
+#define PID2_I_roll 5*0
 #define PID2_D_roll 0.01
 
 
@@ -194,8 +194,13 @@ TO BE TESTED:
 #define PID_D_alt_speed 0
 #endif
 
-//#define SW_BAL
+#define SW_COMP
+#ifdef SW_COMP
+#define ROLL_COMP 5										//added offset of desired_roll
+#define PITCH_COMP 0	
+#endif
 
+//#define SW_BAL
 #ifdef SW_BAL
 #define TOTAL_THR 15
 #define ROLL_UNB 0.1f
@@ -1481,6 +1486,11 @@ void update_correction_parameters()
   
     error_roll = desired_roll - roll;
     error_pitch = desired_pitch - pitch;
+	
+	#ifdef SW_COMP
+	error_roll += ROLL_COMP;
+	error_pitch += PITCH_COMP;
+	#endif
 	
 	error_yaw = desired_yaw - yaw;
 	error_alt = desired_alt - filtHz;
