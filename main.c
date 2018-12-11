@@ -153,11 +153,11 @@ TO BE TESTED:
 #define PIDAltLevel 1
 
 #define PID_P_roll 1
-#define PID_I_roll 5*0
+#define PID_I_roll 5
 #define PID_D_roll 1
 
 #define PID2_P_roll 0.8
-#define PID2_I_roll 5*0
+#define PID2_I_roll 5
 #define PID2_D_roll 0.01
 
 
@@ -194,7 +194,7 @@ TO BE TESTED:
 #define PID_D_alt_speed 0
 #endif
 
-#define SW_BAL
+//#define SW_BAL
 
 #ifdef SW_BAL
 #define TOTAL_THR 15
