@@ -162,11 +162,11 @@ TO BE TESTED:
 
 
 #define PID_P_pitch 3				//10
-#define PID_I_pitch 10				//0
+#define PID_I_pitch 10*0				//0
 #define PID_D_pitch 0.5				//0
 
 #define PID2_P_pitch 0.6			//0.3
-#define PID2_I_pitch 4				//4
+#define PID2_I_pitch 4*0				//4
 #define PID2_D_pitch 0.012			//0.005
 
 #define PID_P_yaw 2
@@ -196,8 +196,8 @@ TO BE TESTED:
 
 #define SW_COMP
 #ifdef SW_COMP
-#define ROLL_COMP 5										//added offset of desired_roll
-#define PITCH_COMP 0	
+#define ROLL_COMP 3										//added offset of desired_roll
+#define PITCH_COMP -5	
 #endif
 
 //#define SW_BAL
