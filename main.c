@@ -44,40 +44,9 @@ ASIS:
 				POS reading		-50ms
 					Barometer reading and filtering (LPF)
 				BATT reading 	-2000ms
-				
-TODO:
-			mcx shall not be a float! but a uint8 instead. Same for the throttle.
-			Add stop command to send log file on RC transmitter.
-			There shall be no assignment of the variant state outside the main loop. 8 cases.
-			Improve the display at startup, consider one single display with all info.
-			Yaw calculation: The yaw gyro integration was moved from 50ms to 5ms loop, kalman_fo() and update_MAG() have been updated. NO! Revert, result was tested NOK.
-			Calibrate PID for altitude control based on simulation.
 
 RELEASE CONTENT:
-			Variant PIDAltLevel has been added, PIDAltLevel=2 gives the opportunity of having nested PID for altitude control.
-			Variant TAKEOFF_THR_LO added for RC receiver. Set the minimum throttle threshold to trigger a take-off.
-			Variant PPM_ATTITUDE_MAX added for RC receiver. Rescale the target attitude request by the RC transmitter by setting the maximum value.
-			Variant dataLoggingControlAnalysis has been modified to log only pitch/roll, errorPitch/errorRoll, motors. No yaw, no altitude but logging is longer.
-			
-TO BE TESTED:   
-			Attitude control with received only: At fixed altitude, trigger an impulse in roll/pitch for system id.
-				- Fixed altitude. OK.
-				- Check if functional (start-up only). OK.
-				- Enable dataLoggingControlAnalysis instead of dataLoggingPOSAnalysis. OK.
-				- Set DiagAngleTolerance=100 deg. OK. 
-				- Try to change pitch/roll target, check that it behaves as expected. OK.
-				    - Logs show no issues with the set points.
-				    - Behaviour seems to be dramatic and the quad difficult to control: controls are too sensitive! reduce effect of the controller by dividing by 5 or 10. OK.
-					- Test again.
-				- DataLogging shall be at least 10s. OK!
-				- Flash and update .m script for dataLogging. OK!
-				- Trigger impulses in roll and pitch and log.
-				
-				
-			Perform Altitude open loop measurements: 
-				- Disable altitude control and introduce impulses in the throttle through RC transmitter.
-			
-			Consider using nested PID for altitude control
+
 */
 
 
@@ -98,6 +67,11 @@ TO BE TESTED:
 #define BATT_SOC
 #define Thrust2Amp 1				//Consumption per motor at full throttle (throttle is rescalled to 1 here)
 #define battCapacity 0.2			//Ah
+#define battLastOCVADDR 30
+#define battLastSOCADDR 40
+#define battLastCoulombCounterSOCADDR 50
+#define battQfADDR 0
+#define lastTimeResetADDR 10
 
 #define PPM_RECV
 #define PPM_TSYNC 10                //in ms
@@ -406,13 +380,24 @@ LPS ps;
 #endif
 
 #ifdef BATT_SOC
+uint8_t battState = 0;
 float battVoltage;
 float battOCV;
 float battSOC;
+float battLastOCV;
+int battLastOCV_addr=battLastOCVADDR;
+float battLastSOC;
+int battLastSOC_addr=battLastSOCADDR;
 float battCoulombCounterSOC;
+float battLastCoulombCounterSOC;
+int battLastCoulombCounterSOC_addr=battLastCoulombCounterSOCADDR;
+uint8_t battQf;
+int battQf_addr = battQfADDR;
+uint32_t battDelay;
 int CoulombCountTs = samplingTimeCntl;
 const float OCV_V[] = {3.2, 3.60, 3.65, 3.70, 3.72, 3.77, 3.80, 3.90, 3.95, 4.00, 4.21};
 const float OCV_S[] = {0.00, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 1.00};
+const float OCV_S_Disc[] = {0.00, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95, 1.00};
 const int OCV_size = 11;
 float OCV_offset = 0.13*0;	//Photon drains 80mA in average
 
@@ -467,6 +452,9 @@ long PPM_CHN_DATA_5_PREV;
 #ifdef BATT_SOC
 uint16_t currentTimeBattTmp;
 uint32_t currentTimeBatt;
+
+uint32_t lastTimeReset;
+int lastTimeReset_addr = lastTimeResetADDR;
 #endif
 
 //WIFI setup
@@ -617,7 +605,8 @@ void setup() {
   local_init();
    
   #ifdef BATT_SOC
-	Batt_Read();
+	Batt_init();
+	Batt_read();
 	delay(500);
 	String socDisplay = "SoC (Ocv) [%]: " + String(battSOC) + " - OCV [V]: " + String(battOCV);
 	Particle.publish("SYS", socDisplay);
@@ -735,7 +724,7 @@ void loop() {
 		currentTimeBattTmp = (System.ticks() - currentTimeBatt)/scaleTick;
         if(currentTimeBattTmp >= samplingTimeBatt)
         {
-            //Batt_Read();
+            //Batt_read();
             currentTimeBatt = System.ticks();
         }
 	#endif
@@ -821,7 +810,7 @@ void loop() {
                 update_control_mixing();                  
                 update_motors_control();
 				#ifdef BATT_SOC
-				//coulombCount();
+				coulombCount();
 				#endif
             }
             else
@@ -1019,6 +1008,10 @@ void standby()
     #ifdef DATALOGGING_TCP
         transmit_DataLogChunk();
     #endif
+	#ifdef BATT_SOC
+		Batt_read();
+		Batt_save();
+	#endif
 	delay(500);
 	publish_timings();
 	#ifdef QualityFactor
@@ -1700,8 +1693,57 @@ void update_control_mixing()
 }
 
 #ifdef BATT_SOC
-void Batt_Read()
+void Batt_init()
 {
+	EEPROM.get(lastTimeReset_addr, lastTimeReset);
+	EEPROM.get(battQf_addr, battQf);
+	EEPROM.get(battLastCoulombCounterSOCADDR, battLastCoulombCounterSOC);
+	EEPROM.get(battLastOCVADDR, battLastOCV);
+	EEPROM.get(battLastSOCADDR, battLastSOC);
+	battDelay = (Time.now()-lastTimeReset)/60;		//in minutes
+	EEPROM.put(battQf_addr, 0);
+}
+
+void Batt_save()
+{
+	EEPROM.put(battLastCoulombCounterSOCADDR, battCoulombCounterSOC);
+	EEPROM.put(battLastOCVADDR, battOCV);
+	EEPROM.put(battLastSOCADDR, battSOC);
+	EEPROM.put(lastTimeReset_addr, lastTimeReset);
+	EEPROM.put(battQf_addr, 1);
+}
+
+void Batt_read()
+{
+	float battSOCmin=0.1;
+	float battSOCmax=0.95;
+	int battRelaxTiOut = 10;		//min
+	float battRelaxCCThr = 1;		
+	if(battQf==1)
+	{
+		if(battDelay > battRelaxTiOut)
+		{
+			battState=3;		//Relaxed
+		}
+		if(battDelay < battRelaxTiOut && battLastCoulombCounterSOC > battRelaxCCThr)
+		{
+			battState=4;		//Discharging, Discharge hyst
+		}
+		if(battSOC < battSOCmin)
+		{
+			battState=1;		//Discharged
+			//Standby();
+		}	
+		if(battSOC > battSOCmax)
+		{
+			battState=2;		//Charged
+		}
+	}
+	else
+	{
+		battState=0;		//unknown 
+	}
+	
 	battVoltage = analogRead(BATT_PIN)*2*3.3/4095;
 	battOCV = battVoltage;
 	battSOC = Batt_OCV2SOC(battOCV);
@@ -2159,7 +2201,7 @@ void publish_timings()
 #ifdef BATT_SOC
 void publish_battStatus()
 {
-	Batt_Read();
+	Batt_read();
     String socDisplay = "SoC (Ocv) [%]: " + String(battSOC) + " - OCV [V]: " + String(battOCV);
 	Particle.publish("SYS", socDisplay);
 }
