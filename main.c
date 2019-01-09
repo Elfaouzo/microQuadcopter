@@ -289,7 +289,7 @@ TO BE TESTED:
 	#define dataLoggingBufferSize 500
 #endif
 
-#define modelxPitchCoef 1                    
+#define modelxCoef 0.5                    
 
 #define AUTOMATIC_MODE
  
@@ -1604,12 +1604,12 @@ void update_motors_control()
 void update_control_mixing()
 {
   #ifdef IMU_ENABLE
+  #ifndef CONFIG_X	//+ config
     #if PIDLevel == 2
 		#ifdef PID_ATTITUDE_SAT
 			corr2_roll = min(max(corr2_roll, -PID_ATTITUDE_SAT), PID_ATTITUDE_SAT);
 			corr2_pitch = min(max(corr2_pitch, -PID_ATTITUDE_SAT), PID_ATTITUDE_SAT);
 		#endif
-		
         #ifdef INVERT_CMD
         mc1 = -corr2_pitch -corr_yaw + corr_alt_total;
         mc4 = corr2_pitch -corr_yaw + corr_alt_total;
@@ -1641,6 +1641,48 @@ void update_control_mixing()
 		mc3-=roll_unbalance*0.5;
 		mc1+=pitch_unbalance*0.5;
 		mc4-=pitch_unbalance*0.5;
+	#endif
+	#else	//X config
+		if PIDLevel == 2
+		#ifdef PID_ATTITUDE_SAT
+			corr2_roll = min(max(corr2_roll, -PID_ATTITUDE_SAT), PID_ATTITUDE_SAT);
+			corr2_pitch = min(max(corr2_pitch, -PID_ATTITUDE_SAT), PID_ATTITUDE_SAT);
+		#endif
+        #ifdef INVERT_CMD
+        mc1 = -modelxCoef*corr2_roll - modelxCoef*corr2_pitch -corr_yaw + corr_alt_total;
+        mc4 = modelxCoef*corr2_roll + modelxCoef*corr2_pitch -corr_yaw + corr_alt_total;
+        mc2 = modelxCoef*corr2_roll - modelxCoef*corr2_pitch + corr_yaw + corr_alt_total;
+        mc3 = -modelxCoef*corr2_roll + modelxCoef*corr2_pitch + corr_yaw + corr_alt_total;
+		#else
+		// NOT UP TO DATE
+        mc1 = corr2_pitch -corr_yaw + corr_alt_total;
+        mc4 = -corr2_pitch -corr_yaw + corr_alt_total;
+        mc2 = corr2_roll + corr_yaw + corr_alt_total;
+        mc3 = -corr2_roll + corr_yaw + corr_alt_total;
+        #endif
+    #else
+        #ifdef INVERT_CMD
+        mc1 = -modelxCoef*corr_roll - modelxCoef*corr_pitch -corr_yaw + corr_alt_total;
+        mc4 = modelxCoef*corr_roll + modelxCoef*corr_pitch -corr_yaw + corr_alt_total;
+        mc2 = modelxCoef*corr_roll - modelxCoef*corr_pitch + corr_yaw + corr_alt_total;
+        mc3 = -modelxCoef*corr_roll + modelxCoef*corr_pitch + corr_yaw + corr_alt_total;
+        #else
+		// NOT UP TO DATE
+        mc1 = corr_pitch -corr_yaw + corr_alt_total;
+        mc4 = -corr_pitch -corr_yaw + corr_alt_total;
+        mc2 = corr_roll + corr_yaw + corr_alt_total;
+        mc3 = -corr_roll + corr_yaw + corr_alt_total;
+        #endif
+
+    #endif
+	
+	#ifdef SW_BAL
+		mc2+=roll_unbalance*0.25+pitch_unbalance*0.25;
+		mc3-=roll_unbalance*0.25-pitch_unbalance*0.25;
+		mc1+=pitch_unbalance*0.25 - roll_unbalance*0.25;
+		mc4-=pitch_unbalance*0.25 + roll_unbalance*0.25;
+	#endif
+	
 	#endif
     /* Adding the throttle */ 
   if(ALT_AUTO == 0)
